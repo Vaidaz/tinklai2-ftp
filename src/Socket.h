@@ -15,9 +15,13 @@ using namespace std;
 class Socket {
   private:
     int sockfd;
+    int fdmax;
+    fd_set master;
     string port;
     string host;
     void *get_in_addr(struct sockaddr *sa);
+    int acceptConnection();
+    int removeConnection(int);
   public:
     Socket();
     Socket(string, string);
@@ -26,8 +30,11 @@ class Socket {
     string getHost();
     string getPort();
     int connectToServer();
+    int openServer();
     void sendMessage(string);
+    void sendMessage(int, string);
     int isPackage();
+    void handleConnections();
     string receiveMessage();
     ~Socket();
 };

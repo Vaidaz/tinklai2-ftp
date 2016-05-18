@@ -4,6 +4,8 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <stdlib.h>
+
 using namespace std;
 
 namespace StringUtils {
@@ -12,6 +14,8 @@ namespace StringUtils {
   vector<string> splitByDelimiter(string str, char delimiter);
   string removeCrLf(string str);
   string cutUntillNewLine(string str);
+  string intToString(int number);
+  int stringToInt(string str);
 };
 
 #endif

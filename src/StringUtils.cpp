@@ -82,3 +82,13 @@ vector<string> StringUtils::splitByDelimiter(string str, char delimiter){
 
   return parts;
 }
+
+string StringUtils::intToString(int number){
+  ostringstream ss;
+  ss << number;
+  return ss.str();
+}
+
+int StringUtils::stringToInt(string str){
+  return atoi(str.c_str());
+}

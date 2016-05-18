@@ -61,30 +61,90 @@ int Socket::connectToServer(){
           s, sizeof s);
 
   freeaddrinfo(servinfo); // all done with this structure
+
+  this->fdmax = this->sockfd;
+  FD_SET(this->sockfd, &this->master);
+
+  return 0;
+}
+
+int Socket::openServer(){
+  const char *port = this->port.c_str();
+
+  int status, yes = 1;
+  struct addrinfo hints, *servinfo;
+  int *sockfd = &this->sockfd;
+
+  memset(&hints, 0, sizeof(hints));   // užtikrinam, kad struktūra yra švari
+  hints.ai_family = AF_UNSPEC;        // IPv4 arba IPv6, (AF_INET, AF_INET6, AF_UNSPEC)
+  hints.ai_socktype = SOCK_STREAM;    // stream socket o ne dgram
+  hints.ai_flags = AI_PASSIVE;        // nurodo mano IP
+
+  // getaddrinfo();
+  if ((status = getaddrinfo(NULL, port, &hints, &servinfo))) {    // pirmu argumentu siunèiamas DNS arba IP
+    fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+    return -1;
+  }
+
+  // socket();
+  if((*sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) == -1){
+    printf("Could not create socket");
+  }
+
+  // perpanaudojam adresą, jei jis jau panaudotas
+  if(-1 == setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int))){
+    return -1;
+  }
+
+  // bind();
+  if(bind(*sockfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1){
+    perror("bind");
+    close( *sockfd );
+    return -1;
+  }
+
+  // listen();
+  if(listen(*sockfd, 10) == -1){
+    printf("listen failed\n");
+    close( *sockfd );
+    return -1;
+  }
+
+  freeaddrinfo(servinfo);
+
+  this->fdmax = this->sockfd;
+  FD_SET(this->sockfd, &this->master);
+
   return 0;
 }
 
 void Socket::sendMessage(string message){
-  send(this->sockfd, message.c_str(), message.length(), 0);
+  sendMessage(this->sockfd, message);
 }
+
+void Socket::sendMessage(int sockfd, string message){
+  send(sockfd, message.c_str(), message.length(), 0);
+}
+
 
 int Socket::isPackage(){
   struct timeval tv;
   tv.tv_sec = 0;
   tv.tv_usec = 10000;
 
-  fd_set master;
-  int fdmax = sockfd;
+  fd_set read = this->master;
 
-  FD_ZERO(&master);
-  FD_SET(sockfd, &master);
+  int fdmax = this->fdmax;
 
-  if (select(fdmax+1, &master, NULL, NULL, &tv) == -1) {
+  FD_ZERO(&read);
+  FD_SET(sockfd, &read);
+
+  if (select(fdmax+1, &read, NULL, NULL, &tv) == -1) {
     perror("select");
     exit(4);
   }
 
-  return FD_ISSET(sockfd, &master);
+  return FD_ISSET(sockfd, &read);
 }
 
 string Socket::receiveMessage(){
@@ -96,6 +156,75 @@ string Socket::receiveMessage(){
   }
   string message(buf);
   return message;
+}
+
+void Socket::handleConnections(){
+  fd_set read_set = this->master;
+  int i;
+
+  if (select(this->fdmax+1, &read_set, NULL, NULL, NULL) == -1) {
+    perror("select");
+    exit(4);
+  }
+
+  // pereinam per egzistuojančius prisijungimus ir tikrinam
+  for(i = 0; i <= this->fdmax; i++) {
+    if (FD_ISSET(i, &read_set)) { // nauji duomenys
+      if (i == this->sockfd) {
+        acceptConnection();
+      } else {
+        removeConnection(i);
+      }
+    }
+  }
+}
+
+int Socket::acceptConnection(){
+  socklen_t addrlen;
+  struct sockaddr_storage remoteaddr; // kliento adresas
+  int newfd;
+  char remoteIP[INET6_ADDRSTRLEN];
+
+  addrlen = sizeof remoteaddr;
+  newfd = accept(this->sockfd, (struct sockaddr *)&remoteaddr, &addrlen);
+
+  if (newfd == -1) {
+    perror("accept");
+  } else {
+    FD_SET(newfd, &this->master); // įdedam į pagrindinį sąrašą
+    if (newfd > this->fdmax) {    // saugom didžiausią deskriptorių
+      this->fdmax = newfd;
+    }
+    printf("selectserver: new connection from %s on "
+      "socket %d\n",
+      inet_ntop(remoteaddr.ss_family,
+        get_in_addr((struct sockaddr*)&remoteaddr),
+        remoteIP, INET6_ADDRSTRLEN),
+      newfd);
+  }
+
+  cout << "Kazkas jungiasi" << endl;
+  // sendMessage(newfd, "Sveikas :)\n");
+
+  return newfd;
+}
+
+int Socket::removeConnection(int sockfd){
+  char buf[100] = {0};
+  int nbytes;
+
+  if ((nbytes = recv(sockfd, buf, sizeof buf, 0)) <= 0) {
+    if (nbytes == 0) {
+      // uždarytas prisijungimas
+      printf("selectserver: socket %d hung up\n", sockfd);
+    } else {
+      // klaida
+      perror("recv");
+    }
+    close(sockfd);
+    FD_CLR(sockfd, &this->master); // paralinam į pagrindinio sąrašo
+  }
+  return sockfd;
 }
 
 void Socket::setHost(string host){

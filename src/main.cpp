@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "./Settings.h"
 #include "./Socket.h"
@@ -12,50 +13,64 @@ int main(){
   string user = Settings::val("user");
   string password = Settings::val("password");
 
-  cout << "sock.receiveMessage()" << endl;
   Socket sock(host, port);
   sock.connectToServer();
-  // cout << sock.receiveMessage() << endl;
 
-  cout << "USER" << endl;
-  sock.sendMessage("USER " + user + "\n");
-  cout << sock.receiveMessage() << endl;
-  cout << "PASS" << endl;
-  sock.sendMessage("PASS " + password + "\n");
-  cout << sock.receiveMessage() << endl;
-  cout << "PWD" << endl;
-  sock.sendMessage("PWD\n");
+  sock.sendMessage("USER " + user + "\r\n");
+  sock.receiveMessage();
+  sock.sendMessage("PASS " + password + "\r\n");
+  sock.receiveMessage();
+  sock.sendMessage("CWD /shared\r\n");
+  sock.receiveMessage();
+  // 30023 = 256*117+71
+  // where a1.a2.a3.a4 is the IP address and p1*256+p2 is the port number.
 
-  sock.sendMessage("MKD test\n");
-  // cout << sock.receiveMessage() << endl;
-  // cout << "TYPE I" << endl;
-  // sock.sendMessage("TYPE I\n");
-  // cout << sock.receiveMessage() << endl;
-  // cout << "PORT" << endl;
-  // sock.sendMessage("PORT 192,168,1,98,209,243\n");
-  // cout << sock.receiveMessage() << endl;
-  // cout << "LIST" << endl;
-  // sock.sendMessage("LIST\n");
-  // cout << sock.receiveMessage() << endl;
+  sock.sendMessage("OPTS UTF8 ON\r\n");
+  sock.receiveMessage();
+  sock.sendMessage("TYPE A\r\n");
+  sock.receiveMessage();
+  sock.sendMessage("PASV\r\n");
+  string response = sock.receiveMessage();
 
-  // cout << sock.receiveMessage() << endl;
+  vector<string> parts1 = StringUtils::splitByDelimiter(response, '(');
+  vector<string> parts2 = StringUtils::splitByDelimiter(parts1[1], ')');
+  vector<string> parts3 = StringUtils::splitByDelimiter(parts2[0], ',');
+
+  string listing_host;
+  string listing_port;
+
+  for(int i = 0; i < 4; i++){
+    listing_host += parts3[i];
+    if(i != 3) listing_host += ".";
+  }
+  listing_port = StringUtils::intToString( 256 * StringUtils::stringToInt(parts3[4]) + StringUtils::stringToInt(parts3[5]) );
+
+  Socket listening(listing_host, listing_port);
+  listening.connectToServer();
+
+  sock.sendMessage("LIST\r\n");
+
+  cout << listening.receiveMessage() << endl;
 
   int run = 1;
   string line;
 
-  while(run){
+  // while(run){
 
-    if(StdioHelper::isInput()){
-      // cout << " Yra " << endl;
-      getline (cin, line);
-      cout << line << endl;
-    }
+  //   if( StdioHelper::isInput() ){
+  //     getline (cin, line);
+  //     // cout << line << endl;
+  //   }
 
-    if(sock.isPackage()){
-      cout << sock.receiveMessage() << endl;
-    }
+  //   if( sock.isPackage() ){
+  //     cout << "Pirmas " + sock.receiveMessage() << endl;
+  //   }
 
-  }
+  //   if( listening.isPackage() ){
+  //     cout << "Antras " + listening.receiveMessage() << endl;
+  //   }
+
+  // }
 
   return 0;
 }
