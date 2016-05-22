@@ -150,6 +150,7 @@ int Socket::isPackage(){
 string Socket::receiveMessage(){
   int numbytes;
   char buf[1000];
+  memset(&buf, 0, sizeof(buf));
   if ((numbytes = recv(this->sockfd, buf, sizeof(buf)-1, 0)) == -1) {
     perror("recv");
     exit(1);
