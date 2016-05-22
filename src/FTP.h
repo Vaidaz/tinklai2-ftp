@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 #include <dirent.h>
+#include <ctype.h>
+#include <algorithm>
+#include <string>
 
 #include "./Socket.h"
 #include "./StringUtils.h"

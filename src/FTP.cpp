@@ -29,16 +29,10 @@ Socket* FTP::getDTP(){
 };
 
 int FTP::execute(string message){
-  const string message_commands[] = {
-    "PWD",
-    "DELE",
-    "RMD",
-    "MKD",
-    "HELP",
-    "CWD"
-  };
+  const string message_commands[] = {"PWD", "DELE", "RMD", "MKD", "HELP", "CWD"};
 
   string command = StringUtils::splitByDelimiter(message, ' ')[0];
+  transform(command.begin(), command.end(), command.begin(), ::toupper);
 
   for( int i = 0; i < sizeof(message_commands)/sizeof(message_commands[0]); i++){
     if( command.compare(message_commands[i]) == 0 ){
@@ -47,13 +41,17 @@ int FTP::execute(string message){
     }
   }
 
-  if( command.compare("LIST") == 0 ){
-    enterPassiveMode();
-    sendMessage(command);
-    return 0;
+  const string passive_commands[] = {"LIST", "RETR"};
+
+  for( int i = 0; i < sizeof(passive_commands)/sizeof(passive_commands[0]); i++){
+    if( command.compare(passive_commands[i]) == 0 ){
+      enterPassiveMode();
+      sendMessage(message);
+      return 0;
+    }
   }
 
-  if( command.compare("ls") == 0 ){
+  if( command.compare("LS") == 0 ){
     cout << "              Shared directory content:" << endl;
     system("ls shared/ -l");
     cout << endl;
