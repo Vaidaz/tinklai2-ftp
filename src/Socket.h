@@ -36,6 +36,7 @@ class Socket {
     int isPackage();
     void handleConnections();
     string receiveMessage();
+    void disconect();
     ~Socket();
 };
 

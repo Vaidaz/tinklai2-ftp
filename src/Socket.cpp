@@ -17,7 +17,6 @@ void *Socket::get_in_addr(struct sockaddr *sa){
 }
 
 int Socket::connectToServer(){
-
   const char *host = this->host.c_str();
   const char *port = this->port.c_str();
   int *sockfd = &this->sockfd;
@@ -242,6 +241,12 @@ string Socket::getHost(){
 
 string Socket::getPort(){
   return this->port;
+}
+
+void Socket::disconect(){
+  if(this->sockfd){
+    close(this->sockfd);
+  }
 }
 
 Socket::~Socket(){

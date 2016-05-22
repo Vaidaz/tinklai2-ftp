@@ -15,46 +15,27 @@ int main(){
   string user = Settings::val("user");
   string password = Settings::val("password");
 
-
   FTP ftp(host, port, user, password);
 
-  int run = 1;
-  string line = "";
-  string response = "";
-  bool ok = false;
-
-  vector<string> parts;
-  vector<string> parts2;
-
-  Socket* pi = ftp.getPI();
-  Socket* dtp = ftp.getDTP();
-
-  ftp.sendMessage("LIST");
+  bool run = true;
+  string command;
 
   while(run){
 
     if( StdioHelper::isInput() ){
-      getline (cin, line);
-      // cout << line << endl;
+      getline (cin, command);
+      ftp.execute(command);
+
+      if( command.compare("q") == 0 ){
+        run = false;
+      }
     }
 
-    if( pi->isPackage() ){
-      response = "";
-      response = pi->receiveMessage();
-      cout << response << endl;
-      parts = StringUtils::splitByDelimiter(response, '\n');
+    if( ftp.piHasPackage() ){
+      cout << ftp.piReceiveMessage();
 
-      ok = false;
-      for(int i=0; i < parts.size(); i++){
-        parts2 = StringUtils::splitByDelimiter(parts[i], ' ');
-
-        if(parts2[0].compare("226") == 0){
-          ok = true;
-        }
-      }
-
-      if(ok){
-        cout << dtp->receiveMessage() << endl;
+      if( ftp.requestedFileActionCompleted() ){
+        cout << ftp.dtpReceiveMessage() << endl;
       }
     }
 

@@ -17,13 +17,22 @@ class FTP{
     string port;
     string user;
     string password;
+    string pi_response;
+    string dtp_response;
     void connect();
     void setUp();
+    void enterPassiveMode();
   public:
     FTP(string host, string port, string user, string password);
     void sendMessage(string);
     Socket* getPI();
     Socket* getDTP();
+    int execute(string command);
+    int piHasPackage();
+    int dtpHasPackage();
+    string piReceiveMessage();
+    string dtpReceiveMessage();
+    bool requestedFileActionCompleted();
     ~FTP();
 };
 
