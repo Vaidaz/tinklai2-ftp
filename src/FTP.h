@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <dirent.h>
 
 #include "./Socket.h"
 #include "./StringUtils.h"
@@ -22,6 +23,7 @@ class FTP{
     void connect();
     void setUp();
     void enterPassiveMode();
+    void getdir(string dir, vector<string> *files);
   public:
     FTP(string host, string port, string user, string password);
     void sendMessage(string);

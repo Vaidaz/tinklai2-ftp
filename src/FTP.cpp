@@ -28,14 +28,21 @@ Socket* FTP::getDTP(){
   return &this->dtp;
 };
 
-int FTP::execute(string command){
+int FTP::execute(string message){
   const string message_commands[] = {
-    "PWD"
+    "PWD",
+    "DELE",
+    "RMD",
+    "MKD",
+    "HELP",
+    "CWD"
   };
+
+  string command = StringUtils::splitByDelimiter(message, ' ')[0];
 
   for( int i = 0; i < sizeof(message_commands)/sizeof(message_commands[0]); i++){
     if( command.compare(message_commands[i]) == 0 ){
-      sendMessage(command);
+      sendMessage(message);
       return 0;
     }
   }
@@ -43,6 +50,13 @@ int FTP::execute(string command){
   if( command.compare("LIST") == 0 ){
     enterPassiveMode();
     sendMessage(command);
+    return 0;
+  }
+
+  if( command.compare("ls") == 0 ){
+    cout << "              Shared directory content:" << endl;
+    system("ls shared/ -l");
+    cout << endl;
     return 0;
   }
 
@@ -131,3 +145,19 @@ bool FTP::requestedFileActionCompleted(){
 
   return false;
 };
+
+void FTP::getdir(string dir, vector<string> *files){
+  DIR *directory;
+  struct dirent *dirp;
+
+  if((directory = opendir(dir.c_str())) == NULL) {
+    cout << "Error opening " << dir << endl;
+  }
+
+  while ((dirp = readdir(directory)) != NULL) {
+    files->push_back(string(dirp->d_name));
+  }
+
+  closedir(directory);
+};
+
