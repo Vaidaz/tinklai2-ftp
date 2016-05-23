@@ -29,9 +29,10 @@ Socket* FTP::getDTP(){
 };
 
 int FTP::execute(string message){
-  const string message_commands[] = {"PWD", "DELE", "RMD", "MKD", "HELP", "CWD"};
+  const string message_commands[] = {"PWD", "DELE", "RMD", "MKD", "HELP", "CWD", "REST"};
 
-  string command = StringUtils::splitByDelimiter(message, ' ')[0];
+  vector<string> params = StringUtils::splitByDelimiter(message, ' ');
+  string command = params[0];
   transform(command.begin(), command.end(), command.begin(), ::toupper);
 
   for( int i = 0; i < sizeof(message_commands)/sizeof(message_commands[0]); i++){
@@ -41,14 +42,21 @@ int FTP::execute(string message){
     }
   }
 
-  const string passive_commands[] = {"LIST", "RETR"};
+  if( command.compare("LIST") == 0 ){
+    enterPassiveMode(DEFAULT);
+    sendMessage(message);
+    return 0;
+  }
 
-  for( int i = 0; i < sizeof(passive_commands)/sizeof(passive_commands[0]); i++){
-    if( command.compare(passive_commands[i]) == 0 ){
-      enterPassiveMode();
-      sendMessage(message);
-      return 0;
+  if( command.compare("RETR") == 0 ){
+    enterPassiveMode(RETR);
+    sendMessage(message);
+
+    if(params.size() >= 2){
+      this->file_name = "shared/" + params[1];
     }
+
+    return 0;
   }
 
   if( command.compare("LS") == 0 ){
@@ -87,7 +95,8 @@ void FTP::setUp(){
   cout << endl;
 };
 
-void FTP::enterPassiveMode(){
+void FTP::enterPassiveMode(int purpose){
+  this->passive_purpose = purpose;
   sendMessage("PASV");
   string response = this->pi.receiveMessage();
   cout << response;
@@ -159,3 +168,27 @@ void FTP::getdir(string dir, vector<string> *files){
   closedir(directory);
 };
 
+void FTP::dtpHandleData(){
+  switch(passive_purpose){
+    case RETR:  retriveFile();
+                break;
+    default:  cout << dtpReceiveMessage();
+              break;
+  }
+};
+
+void FTP::retriveFile(){
+  if( requestedFileActionCompleted() ){
+    if(dtpHasPackage()){
+      string response;
+      ofstream file;
+
+      file.open (this->file_name.c_str());
+      do{
+        response = dtpReceiveMessage();
+        file << response;
+      } while(response.length() > 0);
+      file.close();
+    }
+  }
+};

@@ -35,7 +35,7 @@ int main(){
       cout << ftp.piReceiveMessage();
 
       if( ftp.requestedFileActionCompleted() ){
-        cout << ftp.dtpReceiveMessage() << endl;
+        ftp.dtpHandleData();
       }
     }
 
