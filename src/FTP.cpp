@@ -59,6 +59,27 @@ int FTP::execute(string message){
     return 0;
   }
 
+  if( command.compare("STOR") == 0 ){
+    if(params.size() >= 2){
+      enterPassiveMode(DEFAULT);
+      sendMessage(message);
+
+      string line;
+      string file_name = "shared/" + params[1];
+      ifstream file (file_name.c_str());
+      if( file.is_open() ){
+        while( getline (file, line) ){
+          this->dtp.sendMessage(line + "\n");
+        }
+        file.close();
+        this->dtp.disconect();
+      }
+
+    }
+
+    return 0;
+  }
+
   if( command.compare("LS") == 0 ){
     cout << "              Shared directory content:" << endl;
     system("ls shared/ -l");

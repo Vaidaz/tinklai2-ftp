@@ -34,9 +34,9 @@ int main(){
     if( ftp.piHasPackage() ){
       cout << ftp.piReceiveMessage();
 
-      if( ftp.requestedFileActionCompleted() ){
-        ftp.dtpHandleData();
-      }
+      // if( ftp.requestedFileActionCompleted() ){
+      //   ftp.dtpHandleData();
+      // }
     }
 
   }
