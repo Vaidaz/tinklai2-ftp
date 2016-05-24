@@ -28,38 +28,28 @@ Socket* FTP::getDTP(){
   return &this->dtp;
 };
 
-int FTP::execute(string message){
-  const string message_commands[] = {"PWD", "DELE", "RMD", "MKD", "HELP", "CWD", "REST"};
+void FTP::execute(string message){
 
   vector<string> params = StringUtils::splitByDelimiter(message, ' ');
   string command = params[0];
   transform(command.begin(), command.end(), command.begin(), ::toupper);
 
-  for( int i = 0; i < sizeof(message_commands)/sizeof(message_commands[0]); i++){
-    if( command.compare(message_commands[i]) == 0 ){
-      sendMessage(message);
-      return 0;
-    }
-  }
 
-  if( command.compare("LIST") == 0 ){
+  string simple[] = {"PWD", "DELE", "RMD", "MKD", "HELP", "CWD", "REST"};
+  int simple_size = sizeof(simple)/sizeof(simple[0]);
+  if ( isInArray(simple, simple_size, command) ){
+    sendMessage(message);
+  } else if ( command.compare("LIST") == 0 ){
     enterPassiveMode(DEFAULT);
     sendMessage(message);
-    return 0;
-  }
-
-  if( command.compare("RETR") == 0 ){
-    enterPassiveMode(RETR);
-    sendMessage(message);
-
+  } else if ( command.compare("RETR") == 0 ){
     if(params.size() >= 2){
+      enterPassiveMode(RETR);
+      sendMessage(message);
+
       this->file_name = "shared/" + params[1];
     }
-
-    return 0;
-  }
-
-  if( command.compare("STOR") == 0 ){
+  } else if ( command.compare("STOR") == 0 ){
     if(params.size() >= 2){
       enterPassiveMode(DEFAULT);
       sendMessage(message);
@@ -76,18 +66,11 @@ int FTP::execute(string message){
       }
 
     }
-
-    return 0;
-  }
-
-  if( command.compare("LS") == 0 ){
+  } else if ( command.compare("LS") == 0 ){
     cout << "              Shared directory content:" << endl;
     system("ls shared/ -l");
     cout << endl;
-    return 0;
   }
-
-  return 1;
 }
 
 // Private

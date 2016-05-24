@@ -11,8 +11,10 @@
 
 #include "./Socket.h"
 #include "./StringUtils.h"
+#include "./ArrayHelper.h"
 
 using namespace std;
+using namespace ArrayHelper;
 
 #define RETR 1
 #define DEFAULT 2
@@ -39,7 +41,7 @@ class FTP{
     void sendMessage(string);
     Socket* getPI();
     Socket* getDTP();
-    int execute(string command);
+    void execute(string command);
     int piHasPackage();
     int dtpHasPackage();
     string piReceiveMessage();
