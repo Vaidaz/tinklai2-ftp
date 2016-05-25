@@ -19,10 +19,18 @@ int main(){
 
   bool run = true;
   string command;
+  int counter = 0;
 
   while(run){
+    counter++; // adds ~ every 0.1s
+
+    if( counter >= 600 ){ // ~1min
+      counter = 0;
+      ftp.execute("NOOP");
+    }
 
     if( StdioHelper::isInput() ){
+      counter = 0;
       getline (cin, command);
       ftp.execute(command);
 
@@ -30,15 +38,6 @@ int main(){
         run = false;
       }
     }
-
-    if( ftp.piHasPackage() ){
-      cout << ftp.piReceiveMessage();
-
-      if( ftp.requestedFileActionCompleted() ){
-        ftp.dtpHandleData();
-      }
-    }
-
   }
 
   return 0;

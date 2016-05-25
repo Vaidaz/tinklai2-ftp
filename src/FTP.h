@@ -11,43 +11,23 @@
 
 #include "./Socket.h"
 #include "./StringUtils.h"
-#include "./ArrayHelper.h"
+#include "./PI.h"
+#include "./DTP.h"
+#include "./PassiveResponseParser.h"
 
 using namespace std;
-using namespace ArrayHelper;
-
-#define RETR 1
-#define DEFAULT 2
 
 class FTP{
   private:
-    Socket pi; // protocol interpreter
-    Socket dtp; // data transfer process
-    string host;
-    string port;
+    PI pi; // protocol interpreter
     string user;
     string password;
-    string pi_response;
-    string dtp_response;
-    int passive_purpose;
     string file_name;
-    void connect();
     void setUp();
-    void enterPassiveMode(int purpose);
-    void getdir(string dir, vector<string> *files);
-    void retriveFile();
+    void enterPassiveMode(DTP* dtp);
   public:
     FTP(string host, string port, string user, string password);
-    void sendMessage(string);
-    Socket* getPI();
-    Socket* getDTP();
     void execute(string command);
-    int piHasPackage();
-    int dtpHasPackage();
-    string piReceiveMessage();
-    string dtpReceiveMessage();
-    bool requestedFileActionCompleted();
-    void dtpHandleData();
     ~FTP();
 };
 
